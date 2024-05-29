@@ -2,12 +2,17 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"io"
+	"log"
 	"os"
+	"path/filepath"
 	"strings"
 	"unicode/utf8"
 )
+
+const FIGURES_DIR = "./figures"
 
 func buildBalloon(lines []string, maxWidth int) string {
 	borders := []string{
@@ -77,12 +82,71 @@ func normalizeStringsLength(lines []string, maxWidth int) []string {
 	return newLines
 }
 
+func readFigureFile(figureName string) (string, error) {
+	figureFilePath := fmt.Sprintf("%v/%v.txt", FIGURES_DIR, figureName)
+
+	figure, err := os.ReadFile(figureFilePath)
+	if err != nil {
+		log.Fatal(err)
+
+		return "", err
+	}
+
+	return string(figure), nil
+}
+
+func getValidFigures() []string {
+	entries, err := os.ReadDir(FIGURES_DIR)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var figures []string
+
+	for _, e := range entries {
+		if e.IsDir() {
+			continue
+		}
+
+		filename := strings.TrimSuffix(e.Name(), filepath.Ext(e.Name()))
+
+		figures = append(figures, filename)
+	}
+
+	return figures
+}
+
+func printValidFigures() {
+	validFigures := getValidFigures()
+	fmt.Println("Valid figure options:")
+	for _, figure := range validFigures {
+		fmt.Println(figure)
+	}
+}
+
+func printTextBubble(balloon string) {
+	bubbleLine := `    \
+     \
+      \
+    `
+
+	fmt.Println(balloon)
+	fmt.Print(bubbleLine)
+}
+
+func printFigure(figure string) {
+	figure = strings.Replace(figure, "\n", "\n\t", -1)
+	fmt.Printf("\t")
+	fmt.Println(figure)
+	fmt.Println()
+}
+
 func main() {
 	info, _ := os.Stdin.Stat()
 
 	if info.Mode()&os.ModeCharDevice != 0 {
 		fmt.Println("Command is intended to be used with pipes.")
-		fmt.Println("Example: fotune | gocowsay")
+		fmt.Println("Example: fotune | chadsay")
 		return
 	}
 
@@ -99,18 +163,23 @@ func main() {
 		lines = append(lines, string(input))
 	}
 
-	cow := `         \  ^__^
-          \ (oo)\_______
-	    (__)\       )\/\
-	        ||----w |
-	        ||     ||
-		`
+	var figureType string
+	var listFlag bool
+	flag.StringVar(&figureType, "f", "chad", "Enter the figure name. Ex: chadsay -f <figureName>. Get valid figures with chadsay -l")
+	flag.BoolVar(&listFlag, "l", false, "Lists out available figures")
+	flag.Parse()
+
+	if listFlag {
+		printValidFigures()
+		return
+	}
 
 	lines = tabsToSpaces(lines)
 	maxWidth := calculateMaxWidth(lines)
 	message := normalizeStringsLength(lines, maxWidth)
 	balloon := buildBalloon(message, maxWidth)
-	fmt.Println(balloon)
-	fmt.Println(cow)
-	fmt.Println()
+	figure, _ := readFigureFile(figureType)
+
+	printTextBubble(balloon)
+	printFigure(figure)
 }
