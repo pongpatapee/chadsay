@@ -138,7 +138,6 @@ func printFigure(figure string) {
 	figure = strings.Replace(figure, "\n", "\n\t", -1)
 	fmt.Printf("\t")
 	fmt.Println(figure)
-	fmt.Println()
 }
 
 func main() {
@@ -146,7 +145,7 @@ func main() {
 
 	if info.Mode()&os.ModeCharDevice != 0 {
 		fmt.Println("Command is intended to be used with pipes.")
-		fmt.Println("Example: fotune | chadsay")
+		fmt.Println("Example: fortune | chadsay")
 		return
 	}
 
